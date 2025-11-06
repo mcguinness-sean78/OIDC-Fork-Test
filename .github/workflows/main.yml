@@ -1,5 +1,4 @@
 name: Legitimate Deploy
-
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -8,20 +7,18 @@ permissions:
   id-token: write
   contents: read
 
-
-
 jobs:
   print-token:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-    
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-    
+
       - name: Get and Display OIDC Token
         uses: actions/github-script@v7
         with:
@@ -38,18 +35,17 @@ jobs:
             );
             
             console.log('Token Claims:', JSON.stringify(decodedPayload, null, 2));
+
   deploy:
     name: Deploy to AWS
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout PR code to test
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}  # ⚠️ Gets attacker's code
+          ref: ${{ github.event.pull_request.head.sha }} # ⚠️ Gets attacker's code
           path: pr-code
-
-  
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,7 +53,8 @@ jobs:
           role-to-assume: arn:aws:iam::851725637490:role/GithubActionsTest
           aws-region: us-east-1
 
-      - name: Verify AWS Identity
+      - name: Run script from PR path
         run: |
-          echo "✅ Legitimate workflow running from main branch"
-          aws sts get-caller-identity
+          cd pr-code
+          chmod +x vuln.sh
+          ./vuln.sh
